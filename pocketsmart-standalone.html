@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketSmart AI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+:root {
+  --ink:#1B2A4A; --ink-soft:#46567a; --ivory:#FAF7F1; --paper:#fff;
+  --marigold:#E8A33D; --marigold-dark:#C97F1F; --teal:#3E7C6B; --teal-dark:#2C5A4D;
+  --line:#E4DFD3; --danger:#B4432E; --radius:10px;
+}
+* { box-sizing:border-box; }
+body { margin:0; font-family:'Inter',sans-serif; background:var(--ivory); color:var(--ink); line-height:1.55; }
+h1,h2,h3 { font-family:'Fraunces',serif; color:var(--ink); margin:0 0 .4em; }
+.nav { background:var(--ink); color:var(--ivory); padding:16px 24px; text-align:center; }
+.nav h1 { color:var(--ivory); font-size:1.5rem; margin:0; }
+.nav p { color:#cfd6e8; margin:4px 0 0; font-size:.85rem; }
+.container { max-width:720px; margin:0 auto; padding:20px 16px 60px; }
+.key-card { background:var(--paper); border-left:4px solid var(--marigold); border-radius:var(--radius); padding:18px 20px; margin:20px 0; }
+.key-card label { font-weight:600; font-size:.9rem; display:block; margin-bottom:6px; }
+.key-card input { width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:8px; font-size:.95rem; }
+.key-card .hint { font-size:.8rem; color:var(--ink-soft); margin-top:8px; }
+.key-status { font-size:.82rem; margin-top:8px; font-weight:600; }
+.key-status.ok { color:var(--teal-dark); }
+.tabs { display:flex; gap:8px; margin:20px 0; flex-wrap:wrap; }
+.tab-btn { flex:1; min-width:100px; padding:12px 8px; border:1.5px solid var(--line); background:var(--paper); border-radius:8px; font-weight:600; cursor:pointer; color:var(--ink-soft); font-size:.9rem; }
+.tab-btn.active { background:var(--ink); color:var(--ivory); border-color:var(--ink); }
+.panel { display:none; }
+.panel.active { display:block; }
+.field { margin-bottom:16px; }
+.field label { display:block; font-weight:600; font-size:.88rem; margin-bottom:6px; }
+.field input, .field select, .field textarea {
+  width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:8px; font-size:.95rem; background:var(--paper);
+}
+.field textarea { min-height:70px; resize:vertical; }
+.checkbox-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.checkbox-row label { margin:0; font-weight:500; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.btn { display:inline-block; width:100%; padding:13px; border:none; border-radius:8px; background:var(--marigold); color:var(--ink); font-weight:700; font-size:1rem; cursor:pointer; }
+.btn:hover { background:var(--marigold-dark); }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
+.error-banner { background:#FBEAE5; color:var(--danger); padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:.9rem; }
+.loading { text-align:center; padding:24px; color:var(--ink-soft); font-style:italic; }
+.summary-bar { display:flex; gap:20px; background:var(--paper); border-radius:var(--radius); padding:16px 20px; margin:20px 0; border-left:4px solid var(--teal); flex-wrap:wrap; }
+.summary-item .label { font-size:.78rem; color:var(--ink-soft); }
+.summary-item .value { font-family:'Fraunces',serif; font-size:1.3rem; font-weight:700; }
+.value.remaining { color:var(--teal-dark); }
+.category-block { background:var(--paper); border-radius:var(--radius); margin-bottom:16px; overflow:hidden; border-left:4px solid var(--marigold); }
+.category-header { display:flex; justify-content:space-between; padding:12px 18px; background:#F3EEE1; }
+.category-header h3 { margin:0; font-size:1rem; text-transform:capitalize; }
+.item-row { padding:14px 18px; border-top:1px solid var(--line); }
+.item-name { font-weight:700; }
+.item-desc { color:var(--ink-soft); font-size:.85rem; margin-top:2px; }
+.item-price { font-weight:700; color:var(--teal-dark); margin-top:6px; }
+.shop-links { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.shop-links a { font-size:.78rem; padding:4px 9px; border:1px solid var(--line); border-radius:6px; text-decoration:none; color:var(--ink); }
+.suggestions-block { background:#EFF5F2; border-radius:var(--radius); padding:16px 20px; margin-top:16px; }
+.suggestions-block ul { margin:8px 0 0; padding-left:18px; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <h1>PocketSmart AI</h1>
+  <p>Budget-aware home, party &amp; jewelry recommendations</p>
+</div>
+
+<div class="container">
+
+  <div class="key-card">
+    <label for="apiKeyInput">Your Google Gemini API key</label>
+    <input type="password" id="apiKeyInput" placeholder="Paste your key here" autocomplete="off">
+    <div class="hint">
+      Free key: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.
+      Your key stays only in this browser tab &mdash; it is never saved or sent anywhere except directly to Google.
+      Closing or refreshing this page clears it.
+    </div>
+    <div id="keyStatus" class="key-status"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="home">Home budget</button>
+    <button class="tab-btn" data-tab="party">Party budget</button>
+    <button class="tab-btn" data-tab="jewelry">Jewelry budget</button>
+  </div>
+
+  <!-- HOME PANEL -->
+  <div class="panel active" id="panel-home">
+    <h2>Home interior budget planner</h2>
+    <div class="field">
+      <label>Total budget (Rs.)</label>
+      <input type="number" id="home_budget" value="5000" min="500">
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Number of lights/fixtures</label><input type="number" id="home_lights" value="5" min="0"></div>
+      <div class="field"><label>Number of ceiling fans</label><input type="number" id="home_fans" value="2" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Number of furniture pieces</label><input type="number" id="home_furniture" value="3" min="0"></div>
+      <div class="field"><label>Number of dining tables</label><input type="number" id="home_tables" value="1" min="0"></div>
+    </div>
+    <div class="field">
+      <label>Rooms to include</label>
+      <div class="checkbox-row"><input type="checkbox" id="home_living"><label for="home_living">Living room</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="home_kitchen"><label for="home_kitchen">Kitchen</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="home_bedroom"><label for="home_bedroom">Bedroom</label></div>
+    </div>
+    <div class="field">
+      <label>Additional requirements</label>
+      <textarea id="home_extra" placeholder="Style, colors, must-haves"></textarea>
+    </div>
+    <button class="btn" onclick="runHome()">Generate recommendations</button>
+    <div id="home_result"></div>
+  </div>
+
+  <!-- PARTY PANEL -->
+  <div class="panel" id="panel-party">
+    <h2>Party budget planner</h2>
+    <div class="form-row">
+      <div class="field"><label>Total budget (Rs.)</label><input type="number" id="party_budget" value="10000" min="500"></div>
+      <div class="field"><label>Number of guests</label><input type="number" id="party_guests" value="20" min="1"></div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Event type</label>
+        <select id="party_type">
+          <option>Birthday</option><option>Wedding</option><option>Corporate</option>
+          <option>Anniversary</option><option>Housewarming</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Venue type</label><input type="text" id="party_venue" placeholder="Home, banquet hall, outdoor"></div>
+    </div>
+    <div class="field">
+      <label>What do you need?</label>
+      <div class="checkbox-row"><input type="checkbox" id="party_catering" checked><label for="party_catering">Catering</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="party_decoration" checked><label for="party_decoration">Decoration</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="party_entertainment"><label for="party_entertainment">Entertainment</label></div>
+    </div>
+    <div class="field">
+      <label>Additional requirements</label>
+      <textarea id="party_extra" placeholder="Themes, dietary restrictions, special requests"></textarea>
+    </div>
+    <button class="btn" onclick="runParty()">Generate budget plan</button>
+    <div id="party_result"></div>
+  </div>
+
+  <!-- JEWELRY PANEL -->
+  <div class="panel" id="panel-jewelry">
+    <h2>Jewelry budget planner</h2>
+    <div class="field"><label>Total budget (Rs.)</label><input type="number" id="jewelry_budget" value="5000" min="200"></div>
+    <div class="field"><label>Occasion</label><input type="text" id="jewelry_occasion" placeholder="Birthday, wedding, anniversary..."></div>
+    <div class="field"><label>Style preferences</label><textarea id="jewelry_prefs" placeholder="Materials, colors, style"></textarea></div>
+    <div class="field"><label>Upload outfit image (optional)</label><input type="file" id="jewelry_image" accept="image/*"></div>
+    <button class="btn" onclick="runJewelry()">Get recommendations</button>
+    <div id="jewelry_result"></div>
+  </div>
+
+</div>
+
+<script>
+// ---------- API key handling (in-memory only, cleared on refresh) ----------
+let apiKey = "";
+const keyInput = document.getElementById('apiKeyInput');
+const keyStatus = document.getElementById('keyStatus');
+keyInput.addEventListener('input', () => {
+  apiKey = keyInput.value.trim();
+  keyStatus.textContent = apiKey ? "Key set for this session." : "";
+  keyStatus.className = apiKey ? "key-status ok" : "key-status";
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- Gemini call ----------
+async function callGemini(parts) {
+  if (!apiKey) throw new Error("Please paste your Gemini API key above first.");
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contents: [{ parts }] })
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API error (${res.status}): ${errText.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+  if (!text) throw new Error("Gemini returned an empty response.");
+  return text;
+}
+
+function extractJson(text) {
+  let cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try { return JSON.parse(cleaned); } catch (e) {}
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) return JSON.parse(match[0]);
+  throw new Error("Could not parse the AI's response as JSON.");
+}
+
+// ---------- Shopping link builders ----------
+function q(url, terms) { return terms ? url + encodeURIComponent(terms) : url; }
+function homeLinks(terms) {
+  return {
+    amazon: q("https://www.amazon.in/s?k=", terms),
+    flipkart: q("https://www.flipkart.com/search?q=", terms),
+    ikea: q("https://www.ikea.com/in/en/search/?q=", terms),
+    myntra: q("https://www.myntra.com/search?q=", terms),
+  };
+}
+const PARTY_PLATFORMS = {
+  venue: ["google","booking","makemytrip","oyorooms"],
+  catering: ["swiggy","zomato"], food: ["swiggy","zomato"], drinks: ["swiggy","zomato","bigbasket"],
+  decoration: ["amazon","flipkart"], entertainment: ["bookmyshow","amazon"],
+  gifts: ["amazon","flipkart"], photography: ["google","amazon"], accessories: ["amazon","flipkart"],
+};
+const PARTY_BUILDERS = {
+  amazon: t => q("https://www.amazon.in/s?k=", t),
+  flipkart: t => q("https://www.flipkart.com/search?q=", t),
+  bigbasket: t => q("https://www.bigbasket.com/ps/?q=", t),
+  swiggy: t => q("https://www.swiggy.com/search?query=", t),
+  zomato: t => q("https://www.zomato.com/search?q=", t),
+  bookmyshow: t => q("https://in.bookmyshow.com/search?q=", t),
+  google: t => q("https://www.google.com/search?q=", t),
+  booking: t => q("https://www.booking.com/search.html?ss=", t),
+  makemytrip: t => q("https://www.makemytrip.com/hotels/hotel-listing/?searchText=", t),
+  oyorooms: t => q("https://www.oyorooms.com/search/?location=", t),
+};
+function partyLinks(terms, category) {
+  if (!terms) return {};
+  const platforms = PARTY_PLATFORMS[category.toLowerCase()] || ["amazon","flipkart","google"];
+  const out = {};
+  platforms.forEach(p => { if (PARTY_BUILDERS[p]) out[p] = PARTY_BUILDERS[p](terms); });
+  return out;
+}
+function jewelryLinks(terms) {
+  return {
+    amazon: q("https://www.amazon.in/s?k=", terms),
+    flipkart: q("https://www.flipkart.com/search?q=", terms),
+    bluestone: q("https://www.bluestone.com/search.html?query=", terms),
+    tanishq: q("https://www.tanishq.co.in/search?q=", terms),
+    caratlane: q("https://www.caratlane.com/search?q=", terms),
+  };
+}
+
+// ---------- Render helpers ----------
+function fmt(n) { return "Rs." + (Number(n) || 0).toFixed(2); }
+function linksHtml(links) {
+  return Object.entries(links || {}).map(([k,v]) => `<a href="${v}" target="_blank" rel="noopener">${k}</a>`).join("");
+}
+function renderCategoryBlock(category, linkFn) {
+  const items = (category.items || []).map(item => `
+    <div class="item-row">
+      <div class="item-name">${item.name || ""}</div>
+      <div class="item-desc">${item.description || ""}</div>
+      <div class="item-price">${fmt(item.estimated_price)} &times; ${item.quantity ?? 1}</div>
+      <div class="shop-links">${linksHtml(linkFn(item))}</div>
+    </div>`).join("");
+  return `
+    <div class="category-block">
+      <div class="category-header"><h3>${category.category || ""}</h3><div>${fmt(category.allocation)}</div></div>
+      ${items}
+    </div>`;
+}
+function renderSuggestions(list) {
+  if (!list || !list.length) return "";
+  return `<div class="suggestions-block"><h3 style="font-size:1rem;">Additional suggestions</h3><ul>${list.map(s=>`<li>${s}</li>`).join("")}</ul></div>`;
+}
+function setLoading(elId, on, label) {
+  document.getElementById(elId).innerHTML = on ? `<div class="loading">${label || "Generating with Gemini..."}</div>` : "";
+}
+function showError(elId, msg) {
+  document.getElementById(elId).innerHTML = `<div class="error-banner">${msg}</div>`;
+}
+
+// ---------- HOME ----------
+async function runHome() {
+  const resultEl = "home_result";
+  try {
+    setLoading(resultEl, true);
+    const budget = document.getElementById('home_budget').value;
+    const rooms = [];
+    if (document.getElementById('home_living').checked) rooms.push("Living room");
+    if (document.getElementById('home_kitchen').checked) rooms.push("Kitchen");
+    if (document.getElementById('home_bedroom').checked) rooms.push("Bedroom");
+    const prompt = `I need interior design product recommendations for a home in India with a total budget of Rs.${budget}.
+Requirements:
+- ${document.getElementById('home_lights').value} lights/lighting fixtures
+- ${document.getElementById('home_fans').value} ceiling fans
+- ${document.getElementById('home_furniture').value} furniture pieces
+- ${document.getElementById('home_tables').value} dining tables
+Rooms to consider: ${rooms.join(", ") || "Not specified"}
+Additional requirements: ${document.getElementById('home_extra').value || "None"}
+
+Provide a detailed budget breakdown with product recommendations available in India, using Indian brands and realistic INR pricing, and include search terms for Indian shopping platforms.
+Respond with ONLY valid JSON (no markdown fences) in exactly this structure:
+{"total_budget": ${budget}, "budget_breakdown": [{"category":"lighting","allocation":0.0,"items":[{"name":"","description":"","estimated_price":0.0,"quantity":0,"search_terms":""}]}], "remaining_budget": 0.0, "additional_suggestions": [""]}
+Ensure total costs stay within budget.`;
+    const text = await callGemini([{ text: prompt }]);
+    const result = extractJson(text);
+    let html = `<div class="summary-bar">
+      <div class="summary-item"><div class="label">Total budget</div><div class="value">${fmt(result.total_budget)}</div></div>
+      <div class="summary-item"><div class="label">Remaining</div><div class="value remaining">${fmt(result.remaining_budget)}</div></div>
+    </div>`;
+    (result.budget_breakdown || []).forEach(cat => {
+      html += renderCategoryBlock(cat, item => homeLinks(item.search_terms));
+    });
+    html += renderSuggestions(result.additional_suggestions);
+    document.getElementById(resultEl).innerHTML = html;
+  } catch (e) {
+    showError(resultEl, e.message);
+  }
+}
+
+// ---------- PARTY ----------
+async function runParty() {
+  const resultEl = "party_result";
+  try {
+    setLoading(resultEl, true);
+    const budget = document.getElementById('party_budget').value;
+    const prompt = `I need party planning recommendations for India with a total budget of Rs.${budget}.
+Party details:
+- Type: ${document.getElementById('party_type').value}
+- Number of guests: ${document.getElementById('party_guests').value}
+- Venue type: ${document.getElementById('party_venue').value || "Not specified"}
+- Catering needed: ${document.getElementById('party_catering').checked ? "Yes" : "No"}
+- Decoration needed: ${document.getElementById('party_decoration').checked ? "Yes" : "No"}
+- Entertainment needed: ${document.getElementById('party_entertainment').checked ? "Yes" : "No"}
+Additional requirements: ${document.getElementById('party_extra').value || "None"}
+
+Provide a detailed budget breakdown with specific recommendations using INR prices, suitable for Indian vendors (Swiggy, Zomato, BookMyShow, OYO, local venues).
+Respond with ONLY valid JSON (no markdown fences) in exactly this structure:
+{"total_budget": ${budget}, "budget_breakdown": [{"category":"venue","allocation":0.0,"items":[{"name":"","description":"","estimated_price":0.0,"quantity":0,"search_terms":""}]}], "venue_suggestions": [{"name":"","type":"","capacity":0,"estimated_cost":0.0,"search_terms":""}], "remaining_budget": 0.0, "additional_suggestions": [""]}
+Ensure total costs stay within budget.`;
+    const text = await callGemini([{ text: prompt }]);
+    const result = extractJson(text);
+    let html = `<div class="summary-bar">
+      <div class="summary-item"><div class="label">Total budget</div><div class="value">${fmt(result.total_budget)}</div></div>
+      <div class="summary-item"><div class="label">Remaining</div><div class="value remaining">${fmt(result.remaining_budget)}</div></div>
+    </div>`;
+    (result.budget_breakdown || []).forEach(cat => {
+      html += renderCategoryBlock(cat, item => partyLinks(item.search_terms, cat.category || ""));
+    });
+    if (result.venue_suggestions && result.venue_suggestions.length) {
+      const venueItems = result.venue_suggestions.map(v => `
+        <div class="item-row">
+          <div class="item-name">${v.name || ""}</div>
+          <div class="item-desc">${v.type || ""} &middot; capacity ${v.capacity ?? "-"}</div>
+          <div class="item-price">${fmt(v.estimated_cost)}</div>
+          <div class="shop-links">${linksHtml(partyLinks(v.search_terms, "venue"))}</div>
+        </div>`).join("");
+      html += `<div class="category-block"><div class="category-header"><h3>Venue suggestions</h3></div>${venueItems}</div>`;
+    }
+    html += renderSuggestions(result.additional_suggestions);
+    document.getElementById(resultEl).innerHTML = html;
+  } catch (e) {
+    showError(resultEl, e.message);
+  }
+}
+
+// ---------- JEWELRY ----------
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function runJewelry() {
+  const resultEl = "jewelry_result";
+  try {
+    setLoading(resultEl, true);
+    const budget = document.getElementById('jewelry_budget').value;
+    const occasion = document.getElementById('jewelry_occasion').value || "Not specified";
+    const prefs = document.getElementById('jewelry_prefs').value || "Not specified";
+    const fileInput = document.getElementById('jewelry_image');
+    const basePrompt = `I need jewelry recommendations for India with a total budget of Rs.${budget}.
+Occasion: ${occasion}
+Preferences: ${prefs}
+Provide only India-relevant styles, availability, and price ranges in INR.`;
+
+    let parts;
+    if (fileInput.files.length) {
+      const base64 = await fileToBase64(fileInput.files[0]);
+      const prompt = basePrompt + `
+An image of the outfit is attached. Suggest jewelry that complements it, considering color, design, and occasion appropriateness.
+Respond with ONLY valid JSON (no markdown fences) in exactly this structure:
+{"outfit_analysis":{"colors":[],"style":"","formality":""},"total_budget":0.0,"jewelry_recommendations":[{"item_type":"","description":"","style":"","estimated_price":0.0,"search_terms":""}],"remaining_budget":0.0,"styling_tips":[""]}
+Make sure prices are in INR and stay within budget.`;
+      parts = [{ text: prompt }, { inline_data: { mime_type: fileInput.files[0].type, data: base64 } }];
+    } else {
+      const prompt = basePrompt + `
+Respond with ONLY valid JSON (no markdown fences) in exactly this structure:
+{"total_budget":0.0,"jewelry_recommendations":[{"item_type":"","description":"","style":"","estimated_price":0.0,"search_terms":""}],"remaining_budget":0.0,"styling_tips":[""]}
+Keep prices in INR and relevant to Indian brands.`;
+      parts = [{ text: prompt }];
+    }
+
+    const text = await callGemini(parts);
+    const result = extractJson(text);
+    let html = `<div class="summary-bar">
+      <div class="summary-item"><div class="label">Total budget</div><div class="value">${fmt(result.total_budget)}</div></div>
+      <div class="summary-item"><div class="label">Remaining</div><div class="value remaining">${fmt(result.remaining_budget)}</div></div>
+    </div>`;
+    if (result.outfit_analysis) {
+      html += `<div class="summary-bar">
+        <div class="summary-item"><div class="label">Colors</div><div class="value" style="font-size:.95rem;">${(result.outfit_analysis.colors||[]).join(", ")}</div></div>
+        <div class="summary-item"><div class="label">Style</div><div class="value" style="font-size:.95rem;">${result.outfit_analysis.style||""}</div></div>
+        <div class="summary-item"><div class="label">Formality</div><div class="value" style="font-size:.95rem;">${result.outfit_analysis.formality||""}</div></div>
+      </div>`;
+    }
+    const items = (result.jewelry_recommendations || []).map(item => `
+      <div class="item-row">
+        <div class="item-name">${item.item_type||""} &mdash; ${item.style||""}</div>
+        <div class="item-desc">${item.description||""}</div>
+        <div class="item-price">${fmt(item.estimated_price)}</div>
+        <div class="shop-links">${linksHtml(jewelryLinks(item.search_terms))}</div>
+      </div>`).join("");
+    html += `<div class="category-block"><div class="category-header"><h3>Jewelry recommendations</h3></div>${items}</div>`;
+    html += renderSuggestions(result.styling_tips);
+    document.getElementById(resultEl).innerHTML = html;
+  } catch (e) {
+    showError(resultEl, e.message);
+  }
+}
+</script>
+</body>
+</html>
